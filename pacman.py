@@ -81,7 +81,7 @@ class Maze:
         for mover in self.movables:
             mover.draw_me()
         
-        self.prompt_to_close()
+        #self.prompt_to_close()
 
     def make_window(self, width, height):
         # makes and returns the main game window
