@@ -6,16 +6,19 @@ project guide at http://www.openbookproject.net/pybiblio/gasp/course/6-chomp.htm
 @author: Matt Beck
 """
 import graphics as gx
+import math as math
 
 #%% Global vars
 # Set sizes in pixels
 GRID_SIZE = 30
 MARGIN    = GRID_SIZE
+PAC_SIZE  = GRID_SIZE * 0.8
+PAC_SPEED = 0.25 # grid points per tick
 
 # Set colors
 BACKGROUND_COLOR = 'black'
 WALL_COLOR       = gx.color_rgb(0.6 * 255, 0.9 * 255, 0.9 * 255)
-
+PAC_COLOR        = 'yellow'
 # The shape of the maze.  Each character
 # represents a different type of object
 #   % - Wall
@@ -66,6 +69,7 @@ class Maze:
         width  = len(layout[0])
         self.win = self.make_window(width, height)
         self.make_map(width, height)
+        self.movables = []
         
         # loop through layout and create objects
         for x in range(width):
@@ -73,7 +77,10 @@ class Maze:
                 char = layout[y][x] 
                 print('make '+char+' at '+str(x)+', '+str(y))                
                 self.make_object((x, y), char)
-                
+        # loop through movables and move them
+        for mover in self.movables:
+            mover.draw_me()
+        
         self.prompt_to_close()
 
     def make_window(self, width, height):
@@ -99,7 +106,10 @@ class Maze:
         if character == '%':
             # it's a wall
             self.map[y][x] = Wall(self, location)
-        
+        if character == 'P':
+            # it's pacman
+            mypac = Pacman(self, location)
+            self.movables.append(mypac)
     
     def make_map(self, width, height):
         # map of objects in the grid (initialized to all Nothing objects)
@@ -126,9 +136,13 @@ class Maze:
         return self.game_over
         
     def play(self):
+        for mover in self.movables:
+            mover.move()
         update_when('next_tick')
     
     def done(self):
+        self.map = []
+        self.movables = []
         self.prompt_to_close(self.win)
         
 class Immovable:
@@ -149,7 +163,6 @@ class Wall(Immovable):
         
     def draw_me(self, win):
         (screen_x, screen_y) = self.screen_point
-        dot_size = GRID_SIZE * 0.2
         for point in self.neighbors:
             self.check_neightbor(point)
 
@@ -168,9 +181,153 @@ class Wall(Immovable):
             my_line.draw(self.maze.win)
     
 class Movable:
-    pass
+    def __init__(self, maze, location, speed):
+        self.maze  = maze
+        self.place = location
+        self.speed = speed
 
+class Pacman(Movable):
+    def __init__(self, maze, location):
+        Movable.__init__(self, maze, location, PAC_SPEED)
+        self.direction = 0
 
+    def draw_me(self):
+        maze         = self.maze
+        screen_point = maze.to_screen(self.place)
+        angle        = self.get_angle() * 3.14159 / 180
+        #mouthpoints  = (self.direction + angle, self.direction + 360 - angle)
+        mouthpoints = []
+        mouthpoints.append((screen_point[0] + PAC_SIZE *math.cos(angle), screen_point[1] + PAC_SIZE *math.sin(angle)))
+        mouthpoints.append((screen_point[0] + PAC_SIZE *math.cos(angle), screen_point[1] - PAC_SIZE *math.sin(angle)))
+        self.body    = gx.Circle(gx.Point(*screen_point),PAC_SIZE)
+        self.mouth   = gx.Polygon([gx.Point(*screen_point), gx.Point(*[math.ceil(x) for x in mouthpoints[0]]), gx.Point(*[math.ceil(x) for x in mouthpoints[1]])])
+        self.body.setFill(PAC_COLOR)
+        self.mouth.setFill(BACKGROUND_COLOR)
+        self.body.draw(self.maze.win)
+        self.mouth.draw(self.maze.win)
+        
+    def get_angle(self):
+        (x, y) = self.place
+        (near_x, near_y) = self.nearest_grid_point()
+        distance = abs(x - near_x) + abs(y - near_y)
+        return 1 + 90*distance
+        
+    def move(self):
+        keys = keys_pressed()
+        if   'left'  in keys:
+            self.move_left()
+        elif 'right' in keys:
+            self.move_right()
+        elif 'up'    in keys:
+            self.move_up()
+        elif 'down'  in keys:
+            self.move_down()
+    
+    def move_left (self):
+        self.try_move(-1,  0)
+ 
+    def move_right(self):
+        self.try_move( 1,  0)
+
+    def move_up   (self):
+        self.try_move( 0,  1)
+
+    def move_down (self):
+        self.try_move( 0, -1)
+
+    def try_move(self, move):
+        (move_x, move_y)  = move
+        (cur_x, cur_y)    = self.place
+        (near_x, neaer_y) = self.nearest_grid_point()
+        if self.furthest_move(move) == (0,0):
+            # can't go that direction
+            return
+        if move_x != 0 and cur_y != near_y:
+            # want horizontal, not at a grid point, get to nearest grid point
+            move_x = 0
+            move_y = near_y - cur_y
+        elif move_y != 0 and cur_x != near_x:
+            # want vertical, not at a grid point, get to nearest grid point
+            move_x = near_x - cur_x
+            move_y = 0
+        # restrict movement to furthest available without hitting walls
+        move = self.furthest_move((move_x, move_y))
+        self.move_by(move)
+    
+    def furthest_move(self, move):
+        (move_x, move_y)  = move
+        (cur_x, cur_y)    = self.place
+        (near_x, near_y) = self.nearest_grid_point()
+        maze = self.maze
+
+        # check for walls and truncate movement if heading for one        
+        if move_x > 0:
+            # moving right
+            next_point = (near_x + 1, near_y)
+            if maze.object_at(next_point).is_wall() and cur_x + move_x > near_x:
+                # heading for a wall to the right
+                move_x = near_x - cur_x
+        elif move_x < 0:
+            # moving left
+            next_point = (near_x - 1, near_y)
+            if maze.object_at(next_point).is_wall() and cur_x + move_x < near_x:
+                # heading for a wall to the left
+                move_x = near_x - cur_x
+        if move_y > 0:
+            # moving up
+            next_point = (near_x, near_y + 1)
+            if maze.object_at(next_point).is_wall() and cur_y + move_y > near_y:
+                # heading for a wall above
+                move_y = near_y - cur_y
+        elif move_y < 0:
+            # moving down
+            next_point = (near_x, near_y - 1)
+            if maze.object_at(next_point).is_wall() and cur_y + move_y < near_y:
+                # heading for a wall below
+                move_x = near_y - cur_y
+        
+        # truncate movement by speed (movement per tick) 
+        if   move_x >  self.speed:
+            move_x = self.speed
+        elif move_x < -self.speed:
+            move_x = -self.speed
+        if   move_y >  self.speed:
+            move_y = self.speed
+        elif move_y < -self.speed:
+            move_y = -self.speed
+        
+        return (move_x, move_y)
+        
+    def nearest_grid_point(self):
+        (cur_x, cur_y) = self.place
+        return (round(cur_x), round(cur_y))
+    
+    def move_by(self, move):
+        self.update_position(move)
+        old_body  = self.body
+        old_mouth = self.mouth
+        self.draw_me()
+        old_body.undraw()
+        old_mouth.undraw()
+    
+    def update_position(self, move):
+        (old_x, old_y)   = self.place
+        (move_x, move_y) = move
+        (new_x, new_y)   = (old_x + move_x, old_y + move_y)
+        self.place = (new_x, new_y)
+        
+        # set direction in degrees
+        if   move_x > 0:
+            self.direction = 0
+        elif move_y > 0:
+            self.direction = 90
+        elif move_x < 0:
+            self.direction = 180
+        elif move_y < 0:
+            self.direction = 270
+    
+    
+        
 
 #%% Instance variables
 
