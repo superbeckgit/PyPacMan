@@ -112,6 +112,16 @@ class Maze:
                 new_row.append(Nothing())
             self.map.append(new_row)
     
+    def object_at(self, location):
+        (x, y) = location
+        # check for out of bounds locations and return Nothing object
+        if y < 0 or y >= self.height:
+            return Nothing()
+        if x < 0 or x >= self.width:
+            return Nothing()
+        return self.map[y][x]
+        
+    
     def finished(self):
         return self.game_over
         
@@ -125,11 +135,14 @@ class Immovable:
     pass
 
 class Nothing(Immovable):
-    pass
+    def is_wall(self):
+        return False
 
 class Wall(Immovable):
     def __init__(self, maze, location):
         self.place        = location
+        (x, y)            = self.place
+        self.neighbors    = [(x+1, y),(x-1, y),(x, y+1),(x, y-1)]
         self.maze         = maze
         self.screen_point = self.maze.to_screen(location)
         self.draw_me(maze.win)
@@ -137,11 +150,22 @@ class Wall(Immovable):
     def draw_me(self, win):
         (screen_x, screen_y) = self.screen_point
         dot_size = GRID_SIZE * 0.2
-        print(str(self.screen_point))
-        self.gx_obj = gx.Circle(gx.Point(self.screen_point[0], self.screen_point[1]), dot_size)
-        self.gx_obj.setFill(WALL_COLOR)
-        self.gx_obj.setOutline(WALL_COLOR)
-        self.gx_obj.draw(win)
+        for point in self.neighbors:
+            self.check_neightbor(point)
+
+    def is_wall(self):
+        return True
+        
+    def check_neightbor(self, location):
+        # check if neighbor object is a wall, if so draw line
+        neighbor = self.maze.object_at(location)
+        if neighbor.is_wall():
+            a = self.screen_point
+            b = neighbor.screen_point
+            my_line = gx.Line(gx.Point(*a), gx.Point(*b))
+            my_line.setWidth(2)
+            my_line.setOutline(WALL_COLOR)
+            my_line.draw(self.maze.win)
     
 class Movable:
     pass
