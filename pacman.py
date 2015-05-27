@@ -7,6 +7,7 @@ project guide at http://www.openbookproject.net/pybiblio/gasp/course/6-chomp.htm
 """
 import graphics as gx
 import math as math
+import time as time
 
 #%% Global vars
 # Set sizes in pixels
@@ -138,7 +139,8 @@ class Maze:
     def play(self):
         for mover in self.movables:
             mover.move()
-        update_when('next_tick')
+        time.sleep(1.0);
+        #update_when('next_tick')
     
     def done(self):
         self.map = []
@@ -213,32 +215,33 @@ class Pacman(Movable):
         return 1 + 90*distance
         
     def move(self):
-        keys = keys_pressed()
-        if   'left'  in keys:
+        keys = self.maze.win.lastKey
+        print('Pressed : '+keys)
+        if   'Left'  in keys:
             self.move_left()
-        elif 'right' in keys:
+        elif 'Right' in keys:
             self.move_right()
-        elif 'up'    in keys:
+        elif 'Up'    in keys:
             self.move_up()
-        elif 'down'  in keys:
+        elif 'Down'  in keys:
             self.move_down()
     
     def move_left (self):
-        self.try_move(-1,  0)
+        self.try_move((-1,  0))
  
     def move_right(self):
-        self.try_move( 1,  0)
+        self.try_move(( 1,  0))
 
     def move_up   (self):
-        self.try_move( 0,  1)
+        self.try_move(( 0,  1))
 
     def move_down (self):
-        self.try_move( 0, -1)
+        self.try_move(( 0, -1))
 
     def try_move(self, move):
         (move_x, move_y)  = move
         (cur_x, cur_y)    = self.place
-        (near_x, neaer_y) = self.nearest_grid_point()
+        (near_x, near_y) = self.nearest_grid_point()
         if self.furthest_move(move) == (0,0):
             # can't go that direction
             return
@@ -336,9 +339,9 @@ class Pacman(Movable):
 #%% main run procedure
 
 my_maze = Maze()
-#while not my_maze.finished():
-#    my_maze.play()
-#my_maze.done()
+while not my_maze.finished():
+    my_maze.play()
+my_maze.done()
 
 #%% scratch pad
 """
