@@ -1,13 +1,18 @@
 # -*- coding: utf-8 -*-
 """
 Python implementation of PacMan game
-project guide at http://www.openbookproject.net/pybiblio/gasp/course/6-chomp.html 
+project guide at http://www.openbookproject.net/pybiblio/gasp/course/6-chomp.html
 
 @author: Matt Beck
 """
+
+#%% Imports
+from __future__ import print_function
+from __future__ import division
 import graphics as gx
-import math as math
-import time as time
+import math
+import time
+
 
 #%% Global vars
 # Set sizes in pixels
@@ -28,22 +33,26 @@ PAC_COLOR        = 'yellow'
 #   G - Ghost
 #   P - PacMan
 # Other characters are ignored
-my_layout = [
-  "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%",     # There are 31 '%'s in this line
-  "%.....%.................%.....%",
-  "%o%%%.%.%%%.%%%%%%%.%%%.%.%%%o%",
-  "%.%.....%......%......%.....%.%",
-  "%...%%%.%.%%%%.%.%%%%.%.%%%...%",
-  "%%%.%...%.%.........%.%...%.%%%",
-  "%...%.%%%.%.%%% %%%.%.%%%.%...%",
-  "%.%%%.......%GG GG%.......%%%.%",
-  "%...%.%%%.%.%%%%%%%.%.%%%.%...%",
-  "%%%.%...%.%.........%.%...%.%%%",
-  "%...%%%.%.%%%%.%.%%%%.%.%%%...%",
-  "%.%.....%......%......%.....%.%",
-  "%o%%%.%.%%%.%%%%%%%.%%%.%.%%%o%",
-  "%.....%........P........%.....%",
-  "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"]
+
+# Create a layout, currently 31 x 15
+raw_layout = r"""
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %.....%.................%.....%
+  %o%%%.%.%%%.%%%%%%%.%%%.%.%%%o%
+  %.%.....%......%......%.....%.%
+  %...%%%.%.%%%%.%.%%%%.%.%%%...%
+  %%%.%...%.%.........%.%...%.%%%
+  %...%.%%%.%.%%% %%%.%.%%%.%...%
+  %.%%%.......%GG GG%.......%%%.%
+  %...%.%%%.%.%%%%%%%.%.%%%.%...%
+  %%%.%...%.%.........%.%...%.%%%
+  %...%%%.%.%%%%.%.%%%%.%.%%%...%
+  %.%.....%......%......%.....%.%
+  %o%%%.%.%%%.%%%%%%%.%%%.%.%%%o%
+  %.....%........P........%.....%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+"""
+my_layout = [x.strip() for x in raw_layout.split('\n') if x.strip()]
 
 
 #%% Class Definitions
@@ -65,24 +74,24 @@ class Maze:
         message.draw(self.win)
         self.win.getMouse()
         self.win.close()
-        
+
     def set_layout(self, layout):
         height = len(layout)
         width  = len(layout[0])
         self.win = self.make_window(width, height)
         self.make_map(width, height)
         self.movables = []
-        
+
         # loop through layout and create objects
         for x in range(width):
             for y in range(height):
-                char = layout[y][x] 
-                #print('make '+char+' at '+str(x)+', '+str(y))                
+                char = layout[y][x]
+                #print('make '+char+' at '+str(x)+', '+str(y))
                 self.make_object((x, y), char)
         # loop through movables and move them
         for mover in self.movables:
             mover.draw_me()
-        
+
         #self.prompt_to_close()
 
     def make_window(self, width, height):
@@ -95,7 +104,7 @@ class Maze:
         win = gx.GraphWin(title = 'PacMan!', width = screen_width, height = screen_height)
         win.setBackground(BACKGROUND_COLOR)
         return win
-    
+
     def to_screen(self, point):
         # convert from map coordinates to screen coordinates
         (x, y) = point
@@ -112,7 +121,7 @@ class Maze:
             # it's pacman
             mypac = Pacman(self, location)
             self.movables.append(mypac)
-    
+
     def make_map(self, width, height):
         # map of objects in the grid (initialized to all Nothing objects)
         self.width  = width
@@ -123,7 +132,7 @@ class Maze:
             for x in range(width):
                 new_row.append(Nothing())
             self.map.append(new_row)
-    
+
     def object_at(self, location):
         (x, y) = location
         # check for out of bounds locations and return Nothing object
@@ -132,22 +141,22 @@ class Maze:
         if x < 0 or x >= self.width:
             return Nothing()
         return self.map[y][x]
-        
-    
+
+
     def finished(self):
         return self.game_over
-        
+
     def play(self):
         for mover in self.movables:
             mover.move()
         self.win.update()
         time.sleep(0.05);
-    
+
     def done(self):
         self.map = []
         self.movables = []
         self.prompt_to_close()
-        
+
 class Immovable:
     pass
 
@@ -163,7 +172,7 @@ class Wall(Immovable):
         self.maze         = maze
         self.screen_point = self.maze.to_screen(location)
         self.draw_me(maze.win)
-        
+
     def draw_me(self, win):
         (screen_x, screen_y) = self.screen_point
         for point in self.neighbors:
@@ -171,7 +180,7 @@ class Wall(Immovable):
 
     def is_wall(self):
         return True
-        
+
     def check_neightbor(self, location):
         # check if neighbor object is a wall, if so draw line
         neighbor = self.maze.object_at(location)
@@ -182,7 +191,7 @@ class Wall(Immovable):
             my_line.setWidth(2)
             my_line.setOutline(WALL_COLOR)
             my_line.draw(self.maze.win)
-    
+
 class Movable:
     def __init__(self, maze, location, speed):
         self.maze  = maze
@@ -208,13 +217,13 @@ class Pacman(Movable):
         self.mouth.setFill(BACKGROUND_COLOR)
         self.body.draw(self.maze.win)
         self.mouth.draw(self.maze.win)
-        
+
     def get_angle(self):
         (x, y) = self.place
         (near_x, near_y) = self.nearest_grid_point()
         distance = abs(x - near_x) + abs(y - near_y)
         return 1 + 90*distance
-        
+
     def move(self):
         keys = self.maze.win.lastKey
         print('Pressed : '+keys)
@@ -228,10 +237,10 @@ class Pacman(Movable):
             self.move_down()
         elif 'q'     in keys:
             self.maze.game_over = True
-    
+
     def move_left (self):
         self.try_move((-1,  0))
- 
+
     def move_right(self):
         self.try_move(( 1,  0))
 
@@ -261,14 +270,14 @@ class Pacman(Movable):
         # restrict movement to furthest available without hitting walls
         move = self.furthest_move((move_x, move_y))
         self.move_by(move)
-    
+
     def furthest_move(self, move):
         (move_x, move_y) = move
         (cur_x, cur_y)   = self.place
         (near_x, near_y) = self.nearest_grid_point()
         maze             = self.maze
 
-        # check for walls and truncate movement if heading for one        
+        # check for walls and truncate movement if heading for one
         if move_x > 0:
             # moving right
             next_point = (near_x + 1, near_y)
@@ -293,8 +302,8 @@ class Pacman(Movable):
             if maze.object_at(next_point).is_wall() and cur_y + move_y < near_y:
                 # heading for a wall below
                 move_y = near_y - cur_y
-        
-        # truncate movement by speed (movement per tick) 
+
+        # truncate movement by speed (movement per tick)
         if   move_x >  self.speed:
             move_x = self.speed
         elif move_x < -self.speed:
@@ -303,13 +312,13 @@ class Pacman(Movable):
             move_y = self.speed
         elif move_y < -self.speed:
             move_y = -self.speed
-        
+
         return (move_x, move_y)
-        
+
     def nearest_grid_point(self):
         (cur_x, cur_y) = self.place
         return (round(cur_x), round(cur_y))
-    
+
     def move_by(self, move):
         self.update_position(move)
         old_body  = self.body
@@ -317,13 +326,13 @@ class Pacman(Movable):
         self.draw_me()
         old_body.undraw()
         old_mouth.undraw()
-    
+
     def update_position(self, move):
         (old_x, old_y)   = self.place
         (move_x, move_y) = move
         (new_x, new_y)   = (old_x + move_x, old_y + move_y)
         self.place = (new_x, new_y)
-        
+
         # set direction in degrees
         if   move_x > 0:
             self.direction = 0
@@ -333,33 +342,31 @@ class Pacman(Movable):
             self.direction = 180
         elif move_y < 0:
             self.direction = 270
-    
-    
-        
+
 
 #%% Instance variables
 
 
-
 #%% main run procedure
+if __name__ == '__main__':
+    my_maze = Maze()
+    while not my_maze.finished():
+        my_maze.play()
+    my_maze.done()
 
-my_maze = Maze()
-while not my_maze.finished():
-    my_maze.play()
-my_maze.done()
 
-#%% scratch pad
-"""
-# example window
-win = gx.GraphWin()
-win.setBackground(BACKGROUND_COLOR)
-# example circle
-pac = Circle(Point(100,100),50)
-pac.setFill(WALL_COLOR)
-pac.draw(win)
-# close on click
-message = gx.Text(Point(win.getWidth()/2, 20), 'Click to quit.')
-message.draw(win)
-win.getMouse()
-win.close()
-"""
+    #%% scratch pad
+    """
+    # example window
+    win = gx.GraphWin()
+    win.setBackground(BACKGROUND_COLOR)
+    # example circle
+    pac = Circle(Point(100,100),50)
+    pac.setFill(WALL_COLOR)
+    pac.draw(win)
+    # close on click
+    message = gx.Text(Point(win.getWidth()/2, 20), 'Click to quit.')
+    message.draw(win)
+    win.getMouse()
+    win.close()
+    """
