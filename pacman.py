@@ -59,8 +59,9 @@ class Maze:
         # set_speed(20)
 
     def prompt_to_close(self):
-        message = gx.Text(gx.Point(self.win.getWidth()/2, 20), 'Click to quit.')
-        message.setTextColor('gray')
+        message = gx.Text(gx.Point(self.win.getWidth()/2, self.win.getHeight()/2),
+                          'Click anywhere to quit.')
+        message.setTextColor('white')
         message.draw(self.win)
         self.win.getMouse()
         self.win.close()
@@ -76,7 +77,7 @@ class Maze:
         for x in range(width):
             for y in range(height):
                 char = layout[y][x] 
-                print('make '+char+' at '+str(x)+', '+str(y))                
+                #print('make '+char+' at '+str(x)+', '+str(y))                
                 self.make_object((x, y), char)
         # loop through movables and move them
         for mover in self.movables:
@@ -139,13 +140,13 @@ class Maze:
     def play(self):
         for mover in self.movables:
             mover.move()
-        time.sleep(1.0);
-        #update_when('next_tick')
+        self.win.update()
+        time.sleep(0.05);
     
     def done(self):
         self.map = []
         self.movables = []
-        self.prompt_to_close(self.win)
+        self.prompt_to_close()
         
 class Immovable:
     pass
@@ -225,6 +226,8 @@ class Pacman(Movable):
             self.move_up()
         elif 'Down'  in keys:
             self.move_down()
+        elif 'q'     in keys:
+            self.maze.game_over = True
     
     def move_left (self):
         self.try_move((-1,  0))
@@ -233,14 +236,16 @@ class Pacman(Movable):
         self.try_move(( 1,  0))
 
     def move_up   (self):
-        self.try_move(( 0,  1))
-
-    def move_down (self):
+        # directions reversed for graphics.py
         self.try_move(( 0, -1))
 
+    def move_down (self):
+        # directions reversed for graphics.py
+        self.try_move(( 0,  1))
+
     def try_move(self, move):
-        (move_x, move_y)  = move
-        (cur_x, cur_y)    = self.place
+        (move_x, move_y) = move
+        (cur_x, cur_y)   = self.place
         (near_x, near_y) = self.nearest_grid_point()
         if self.furthest_move(move) == (0,0):
             # can't go that direction
@@ -258,10 +263,10 @@ class Pacman(Movable):
         self.move_by(move)
     
     def furthest_move(self, move):
-        (move_x, move_y)  = move
-        (cur_x, cur_y)    = self.place
+        (move_x, move_y) = move
+        (cur_x, cur_y)   = self.place
         (near_x, near_y) = self.nearest_grid_point()
-        maze = self.maze
+        maze             = self.maze
 
         # check for walls and truncate movement if heading for one        
         if move_x > 0:
@@ -277,17 +282,17 @@ class Pacman(Movable):
                 # heading for a wall to the left
                 move_x = near_x - cur_x
         if move_y > 0:
-            # moving up
+            # moving down (reversed direction for graphics.py)
             next_point = (near_x, near_y + 1)
             if maze.object_at(next_point).is_wall() and cur_y + move_y > near_y:
                 # heading for a wall above
                 move_y = near_y - cur_y
         elif move_y < 0:
-            # moving down
+            # moving up (reversed direction for graphics.py)
             next_point = (near_x, near_y - 1)
             if maze.object_at(next_point).is_wall() and cur_y + move_y < near_y:
                 # heading for a wall below
-                move_x = near_y - cur_y
+                move_y = near_y - cur_y
         
         # truncate movement by speed (movement per tick) 
         if   move_x >  self.speed:
