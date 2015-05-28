@@ -317,7 +317,7 @@ class Pacman(Movable):
 
     def nearest_grid_point(self):
         (cur_x, cur_y) = self.place
-        return (round(cur_x), round(cur_y))
+        return (int(round(cur_x)), int(round(cur_y)))
 
     def move_by(self, move):
         self.update_position(move)
