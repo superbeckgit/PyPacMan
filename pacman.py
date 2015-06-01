@@ -197,7 +197,7 @@ class Pacman(Movable):
     def draw_me(self):
         maze         = self.maze
         screen_point = maze.to_screen(self.place)
-        angle        = self.get_angle() * 3.14159 / 180
+        angle        = (self.get_angle()+self.direction) * 3.14159 / 180
         #mouthpoints  = (self.direction + angle, self.direction + 360 - angle)
         mouthpoints = []
         mouthpoints.append((screen_point[0] + PAC_SIZE *math.cos(angle), screen_point[1] + PAC_SIZE *math.sin(angle)))
