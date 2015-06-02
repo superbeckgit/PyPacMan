@@ -34,16 +34,17 @@ GHOST_COLORS     = ['red','green','blue','purple']
 
 # Ghost shape layout
 GHOST_SHAPE = [
-    ( 0.00, -0.50),
-    ( 0.25, -0.75),
-    ( 0.50, -0.50),
-    ( 0.75, -0.75),
-    ( 0.75,  0.50),
-    ( 0.50, -0.50),
-    (-0.75,  0.50),
-    (-0.75, -0.75),
-    (-0.50, -0.50),
-    (-0.25, -0.75)]
+    ( 0.00,  0.50),
+    ( 0.25,  0.75),
+    ( 0.50,  0.50),
+    ( 0.75,  0.75),
+    ( 0.75, -0.50),
+    ( 0.50, -0.75),
+    (-0.50, -0.75),
+    (-0.75, -0.50),
+    (-0.75,  0.75),
+    (-0.50,  0.50),
+    (-0.25,  0.75)]
 
 # The shape of the maze.  Each character
 # represents a different type of object
@@ -420,10 +421,12 @@ class Ghost(Movable):
         (screen_x, screen_y) = maze.to_screen(self.place)
         body_points = []
         for (x,y) in GHOST_SHAPE:
-            body_points.append(gx.Point(x*GRID_SIZE + screen_x, y*GRID_SIZE + screen_y))
-        self.body = gx.Polygon(*body_points)
+            body_points.append((x*GRID_SIZE + screen_x, y*GRID_SIZE + screen_y))
+        vertices = [gx.Point(x,y) for (x,y) in body_points]
+        self.body = gx.Polygon(*vertices)
         self.body.setFill(self.color)
         self.body.setOutline(self.color)
+        self.body.draw(maze.win)
 
     def move(self):
         (cur_x, cur_y)   = self.place
