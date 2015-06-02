@@ -21,6 +21,7 @@ MARGIN    = GRID_SIZE
 PAC_SIZE  = GRID_SIZE * 0.8
 PAC_SPEED = 0.25 # grid points per tick
 FOOD_SIZE = GRID_SIZE * 0.15
+DEG_TO_RAD = math.pi / 180
 
 # Set colors
 BACKGROUND_COLOR = 'black'
@@ -238,7 +239,7 @@ class Pacman(Movable):
     def draw_me(self):
         maze         = self.maze
         screen_point = maze.to_screen(self.place)
-        angle        = (self.get_angle()+self.direction) * 3.14159 / 180
+        angle        = (self.get_angle()+self.direction) * DEG_TO_RAD
         #mouthpoints  = (self.direction + angle, self.direction + 360 - angle)
         mouthpoints = []
         mouthpoints.append((screen_point[0] + PAC_SIZE *math.cos(angle), screen_point[1] + PAC_SIZE *math.sin(angle)))
