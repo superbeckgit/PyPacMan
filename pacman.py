@@ -5,9 +5,14 @@ project guide at http://www.openbookproject.net/pybiblio/gasp/course/6-chomp.htm
 
 @author: Matt Beck
 """
+
+#%% Imports
+from __future__ import print_function
+from __future__ import division
 import graphics as gx
-import math as math
-import time as time
+import math
+import time
+
 
 #%% Global vars
 # Set sizes in pixels
@@ -16,6 +21,7 @@ MARGIN    = GRID_SIZE
 PAC_SIZE  = GRID_SIZE * 0.8
 PAC_SPEED = 0.25 # grid points per tick
 FOOD_SIZE = GRID_SIZE * 0.15
+DEG_TO_RAD = math.pi / 180
 
 # Set colors
 BACKGROUND_COLOR = 'black'
@@ -30,22 +36,26 @@ FOOD_COLOR       = 'red'
 #   G - Ghost
 #   P - PacMan
 # Other characters are ignored
-my_layout = [
-  "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%",
-  "%.....%.................%.....%",
-  "%o%%%.%.%%%.%%%%%%%.%%%.%.%%%o%",
-  "%.%.....%......%......%.....%.%",
-  "%...%%%.%.%%%%.%.%%%%.%.%%%...%",
-  "%%%.%...%.%.........%.%...%.%%%",
-  "%...%.%%%.%.%%% %%%.%.%%%.%...%",
-  "%.%%%.......%GG GG%.......%%%.%",
-  "%...%.%%%.%.%%%%%%%.%.%%%.%...%",
-  "%%%.%...%.%.........%.%...%.%%%",
-  "%...%%%.%.%%%%.%.%%%%.%.%%%...%",
-  "%.%.....%......%......%.....%.%",
-  "%o%%%.%.%%%.%%%%%%%.%%%.%.%%%o%",
-  "%.....%........P........%.....%",
-  "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"]
+
+# Create a layout, currently 31 x 15
+raw_layout = r"""
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %.....%.................%.....%
+  %o%%%.%.%%%.%%%%%%%.%%%.%.%%%o%
+  %.%.....%......%......%.....%.%
+  %...%%%.%.%%%%.%.%%%%.%.%%%...%
+  %%%.%...%.%.........%.%...%.%%%
+  %...%.%%%.%.%%% %%%.%.%%%.%...%
+  %.%%%.......%GG GG%.......%%%.%
+  %...%.%%%.%.%%%%%%%.%.%%%.%...%
+  %%%.%...%.%.........%.%...%.%%%
+  %...%%%.%.%%%%.%.%%%%.%.%%%...%
+  %.%.....%......%......%.....%.%
+  %o%%%.%.%%%.%%%%%%%.%%%.%.%%%o%
+  %.....%........P........%.....%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+"""
+my_layout = [x.strip() for x in raw_layout.split('\n') if x.strip()]
 
 
 #%% Class Definitions
@@ -150,7 +160,7 @@ class Maze:
         return self.game_over
 
     def winner(self):
-        self.done()
+        self.game_over = True
 
     def play(self):
         for mover in self.movables:
@@ -232,7 +242,7 @@ class Pacman(Movable):
     def draw_me(self):
         maze         = self.maze
         screen_point = maze.to_screen(self.place)
-        angle        = (self.get_angle()+self.direction) * 3.14159 / 180
+        angle        = (self.get_angle()+self.direction) * DEG_TO_RAD
         #mouthpoints  = (self.direction + angle, self.direction + 360 - angle)
         mouthpoints = []
         mouthpoints.append((screen_point[0] + PAC_SIZE *math.cos(angle), screen_point[1] + PAC_SIZE *math.sin(angle)))
@@ -343,7 +353,7 @@ class Pacman(Movable):
 
     def nearest_grid_point(self):
         (cur_x, cur_y) = self.place
-        return (round(cur_x), round(cur_y))
+        return (int(round(cur_x)), int(round(cur_y)))
 
     def move_by(self, move):
         self.update_position(move)
@@ -379,26 +389,26 @@ class Pacman(Movable):
 #%% Instance variables
 
 
-
 #%% main run procedure
+if __name__ == '__main__':
+    my_maze = Maze()
+    while not my_maze.finished():
+        my_maze.play()
+    my_maze.done()
 
-my_maze = Maze()
-while not my_maze.finished():
-    my_maze.play()
-my_maze.done()
 
-#%% scratch pad
-"""
-# example window
-win = gx.GraphWin()
-win.setBackground(BACKGROUND_COLOR)
-# example circle
-pac = Circle(Point(100,100),50)
-pac.setFill(WALL_COLOR)
-pac.draw(win)
-# close on click
-message = gx.Text(Point(win.getWidth()/2, 20), 'Click to quit.')
-message.draw(win)
-win.getMouse()
-win.close()
-"""
+    #%% scratch pad
+    """
+    # example window
+    win = gx.GraphWin()
+    win.setBackground(BACKGROUND_COLOR)
+    # example circle
+    pac = Circle(Point(100,100),50)
+    pac.setFill(WALL_COLOR)
+    pac.draw(win)
+    # close on click
+    message = gx.Text(Point(win.getWidth()/2, 20), 'Click to quit.')
+    message.draw(win)
+    win.getMouse()
+    win.close()
+    """
