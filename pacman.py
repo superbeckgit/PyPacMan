@@ -20,11 +20,13 @@ GRID_SIZE = 30
 MARGIN    = GRID_SIZE
 PAC_SIZE  = GRID_SIZE * 0.8
 PAC_SPEED = 0.25 # grid points per tick
+FOOD_SIZE = GRID_SIZE * 0.15
 
 # Set colors
 BACKGROUND_COLOR = 'black'
 WALL_COLOR       = gx.color_rgb(0.6 * 255, 0.9 * 255, 0.9 * 255)
 PAC_COLOR        = 'yellow'
+FOOD_COLOR       = 'red'
 # The shape of the maze.  Each character
 # represents a different type of object
 #   % - Wall
@@ -80,7 +82,8 @@ class Maze:
         width  = len(layout[0])
         self.win = self.make_window(width, height)
         self.make_map(width, height)
-        self.movables = []
+        self.movables   = []
+        self.food_count = 0
 
         # loop through layout and create objects
         for x in range(width):
@@ -121,6 +124,9 @@ class Maze:
             # it's pacman
             mypac = Pacman(self, location)
             self.movables.append(mypac)
+        if character == '.':
+            self.food_count += 1
+            self.map[y][x]   = Food(self, location)
 
     def make_map(self, width, height):
         # map of objects in the grid (initialized to all Nothing objects)
@@ -142,6 +148,12 @@ class Maze:
             return Nothing()
         return self.map[y][x]
 
+    def remove_food(self, place):
+        (x, y) = place
+        self.map[y][x]   = Nothing()
+        self.food_count -= 1
+        if self.food_count == 0:
+            self.win
 
     def finished(self):
         return self.game_over
@@ -158,11 +170,31 @@ class Maze:
         self.prompt_to_close()
 
 class Immovable:
-    pass
+    def eat(self, pacman):
+        pass
 
-class Nothing(Immovable):
     def is_wall(self):
         return False
+
+class Nothing(Immovable):
+    pass
+
+class Food(Immovable):
+    def __init__(self, maze, point):
+        self.place        = point
+        self.screen_point = maze.to_screen(point)
+        self.maze         = maze
+        self.draw_me()
+
+    def draw_me(self):
+        self.dot = gx.Circle(gx.Point(*self.screen_point),FOOD_SIZE)
+        self.dot.setFill(FOOD_COLOR)
+        self.dot.setOutline(FOOD_COLOR)
+        self.dot.draw(self.maze.win)
+
+    def eat(self, pacman):
+        self.dot.undraw()
+        self.maze.remove_food(self.place)
 
 class Wall(Immovable):
     def __init__(self, maze, location):
@@ -206,7 +238,7 @@ class Pacman(Movable):
     def draw_me(self):
         maze         = self.maze
         screen_point = maze.to_screen(self.place)
-        angle        = self.get_angle() * 3.14159 / 180
+        angle        = (self.get_angle()+self.direction) * 3.14159 / 180
         #mouthpoints  = (self.direction + angle, self.direction + 360 - angle)
         mouthpoints = []
         mouthpoints.append((screen_point[0] + PAC_SIZE *math.cos(angle), screen_point[1] + PAC_SIZE *math.sin(angle)))
