@@ -12,22 +12,39 @@ from __future__ import division
 import graphics as gx
 import math
 import time
+import random
 
 
 #%% Global vars
 # Set sizes in pixels
-GRID_SIZE = 30
-MARGIN    = GRID_SIZE
-PAC_SIZE  = GRID_SIZE * 0.8
-PAC_SPEED = 0.25 # grid points per tick
-FOOD_SIZE = GRID_SIZE * 0.15
-DEG_TO_RAD = math.pi / 180
+GRID_SIZE   = 30
+MARGIN      = GRID_SIZE
+PAC_SIZE    = GRID_SIZE * 0.8
+PAC_SPEED   = 0.25 # grid points per tick
+GHOST_SPEED = 0.25
+FOOD_SIZE   = GRID_SIZE * 0.15
+DEG_TO_RAD  = math.pi / 180
 
 # Set colors
 BACKGROUND_COLOR = 'black'
 WALL_COLOR       = gx.color_rgb(0.6 * 255, 0.9 * 255, 0.9 * 255)
 PAC_COLOR        = 'yellow'
 FOOD_COLOR       = 'red'
+GHOST_COLORS     = ['red','green','blue','purple']
+
+# Ghost shape layout
+GHOST_SHAPE = [
+    ( 0.00, -0.50),
+    ( 0.25, -0.75),
+    ( 0.50, -0.50),
+    ( 0.75, -0.75),
+    ( 0.75,  0.50),
+    ( 0.50, -0.50),
+    (-0.75,  0.50),
+    (-0.75, -0.75),
+    (-0.50, -0.50),
+    (-0.25, -0.75)]
+
 # The shape of the maze.  Each character
 # represents a different type of object
 #   % - Wall
@@ -128,6 +145,9 @@ class Maze:
         if character == '.':
             self.food_count += 1
             self.map[y][x]   = Food(self, location)
+        if character == 'G':
+            ghost = Ghost(self, location)
+            self.movables.append(ghost)
 
     def make_map(self, width, height):
         # map of objects in the grid (initialized to all Nothing objects)
@@ -234,79 +254,6 @@ class Movable:
         self.place = location
         self.speed = speed
 
-class Pacman(Movable):
-    def __init__(self, maze, location):
-        Movable.__init__(self, maze, location, PAC_SPEED)
-        self.direction = 0
-
-    def draw_me(self):
-        maze         = self.maze
-        screen_point = maze.to_screen(self.place)
-        angle        = (self.get_angle()+self.direction) * DEG_TO_RAD
-        #mouthpoints  = (self.direction + angle, self.direction + 360 - angle)
-        mouthpoints = []
-        mouthpoints.append((screen_point[0] + PAC_SIZE *math.cos(angle), screen_point[1] + PAC_SIZE *math.sin(angle)))
-        mouthpoints.append((screen_point[0] + PAC_SIZE *math.cos(angle), screen_point[1] - PAC_SIZE *math.sin(angle)))
-        self.body    = gx.Circle(gx.Point(*screen_point),PAC_SIZE)
-        self.mouth   = gx.Polygon([gx.Point(*screen_point), gx.Point(*[math.ceil(x) for x in mouthpoints[0]]), gx.Point(*[math.ceil(x) for x in mouthpoints[1]])])
-        self.body.setFill(PAC_COLOR)
-        self.mouth.setFill(BACKGROUND_COLOR)
-        self.body.draw(self.maze.win)
-        self.mouth.draw(self.maze.win)
-
-    def get_angle(self):
-        (x, y) = self.place
-        (near_x, near_y) = self.nearest_grid_point()
-        distance = abs(x - near_x) + abs(y - near_y)
-        return 1 + 90*distance
-
-    def move(self):
-        keys = self.maze.win.lastKey
-        print('Pressed : '+keys)
-        if   'Left'  in keys:
-            self.move_left()
-        elif 'Right' in keys:
-            self.move_right()
-        elif 'Up'    in keys:
-            self.move_up()
-        elif 'Down'  in keys:
-            self.move_down()
-        elif 'q'     in keys:
-            self.maze.game_over = True
-
-    def move_left (self):
-        self.try_move((-1,  0))
-
-    def move_right(self):
-        self.try_move(( 1,  0))
-
-    def move_up   (self):
-        # directions reversed for graphics.py
-        self.try_move(( 0, -1))
-
-    def move_down (self):
-        # directions reversed for graphics.py
-        self.try_move(( 0,  1))
-
-    def try_move(self, move):
-        (move_x, move_y) = move
-        (cur_x, cur_y)   = self.place
-        (near_x, near_y) = self.nearest_grid_point()
-        if self.furthest_move(move) == (0,0):
-            # can't go that direction
-            return
-        if move_x != 0 and cur_y != near_y:
-            # want horizontal, not at a grid point, get to nearest grid point
-            move_x = 0
-            move_y = near_y - cur_y
-        elif move_y != 0 and cur_x != near_x:
-            # want vertical, not at a grid point, get to nearest grid point
-            move_x = near_x - cur_x
-            move_y = 0
-        # restrict movement to furthest available without hitting walls
-        move = self.furthest_move((move_x, move_y))
-        self.move_by(move)
-
     def furthest_move(self, move):
         (move_x, move_y) = move
         (cur_x, cur_y)   = self.place
@@ -355,6 +302,84 @@ class Pacman(Movable):
         (cur_x, cur_y) = self.place
         return (int(round(cur_x)), int(round(cur_y)))
 
+    def update_position(self, move):
+        (old_x, old_y)   = self.place
+        (move_x, move_y) = move
+        (new_x, new_y)   = (old_x + move_x, old_y + move_y)
+        self.place = (new_x, new_y)
+
+class Pacman(Movable):
+    def __init__(self, maze, location):
+        Movable.__init__(self, maze, location, PAC_SPEED)
+        self.direction = 0
+
+    def draw_me(self):
+        maze         = self.maze
+        screen_point = maze.to_screen(self.place)
+        angle        = (self.get_angle()+self.direction) * DEG_TO_RAD
+        #mouthpoints  = (self.direction + angle, self.direction + 360 - angle)
+        mouthpoints = []
+        mouthpoints.append((screen_point[0] + PAC_SIZE *math.cos(angle), screen_point[1] + PAC_SIZE *math.sin(angle)))
+        mouthpoints.append((screen_point[0] + PAC_SIZE *math.cos(angle), screen_point[1] - PAC_SIZE *math.sin(angle)))
+        self.body    = gx.Circle(gx.Point(*screen_point),PAC_SIZE)
+        self.mouth   = gx.Polygon([gx.Point(*screen_point), gx.Point(*[math.ceil(x) for x in mouthpoints[0]]), gx.Point(*[math.ceil(x) for x in mouthpoints[1]])])
+        self.body.setFill(PAC_COLOR)
+        self.mouth.setFill(BACKGROUND_COLOR)
+        self.body.draw(self.maze.win)
+        self.mouth.draw(self.maze.win)
+
+    def get_angle(self):
+        (x, y) = self.place
+        (near_x, near_y) = self.nearest_grid_point()
+        distance = abs(x - near_x) + abs(y - near_y)
+        return 1 + 90*distance
+
+    def move(self):
+        keys = self.maze.win.lastKey
+        if   'Left'  in keys:
+            self.move_left()
+        elif 'Right' in keys:
+            self.move_right()
+        elif 'Up'    in keys:
+            self.move_up()
+        elif 'Down'  in keys:
+            self.move_down()
+        elif 'q'     in keys:
+            self.maze.game_over = True
+
+    def move_left (self):
+        self.try_move((-1,  0))
+
+    def move_right(self):
+        self.try_move(( 1,  0))
+
+    def move_up   (self):
+        # directions reversed for graphics.py
+        self.try_move(( 0, -1))
+
+    def move_down (self):
+        # directions reversed for graphics.py
+        self.try_move(( 0,  1))
+
+    def try_move(self, move):
+        (move_x, move_y) = move
+        (cur_x, cur_y)   = self.place
+        (near_x, near_y) = self.nearest_grid_point()
+        if self.furthest_move(move) == (0,0):
+            # can't go that direction
+            return
+        if move_x != 0 and cur_y != near_y:
+            # want horizontal, not at a grid point, get to nearest grid point
+            move_x = 0
+            move_y = near_y - cur_y
+        elif move_y != 0 and cur_x != near_x:
+            # want vertical, not at a grid point, get to nearest grid point
+            move_x = near_x - cur_x
+            move_y = 0
+        # restrict movement to furthest available without hitting walls
+        move = self.furthest_move((move_x, move_y))
+        self.move_by(move)
+
     def move_by(self, move):
         self.update_position(move)
         old_body  = self.body
@@ -369,13 +394,8 @@ class Pacman(Movable):
             item = self.maze.object_at((near_x, near_y))
             item.eat_me(self)
 
-    def update_position(self, move):
-        (old_x, old_y)   = self.place
-        (move_x, move_y) = move
-        (new_x, new_y)   = (old_x + move_x, old_y + move_y)
-        self.place = (new_x, new_y)
-
         # set direction in degrees
+        (move_x, move_y) = move
         if   move_x > 0:
             self.direction = 0
         elif move_y > 0:
@@ -385,6 +405,73 @@ class Pacman(Movable):
         elif move_y < 0:
             self.direction = 270
 
+class Ghost(Movable):
+    num = 0
+
+    def __init__(self, maze, start):
+        Ghost.num       += 1
+        self.next_point = start
+        self.movement   = (0, 0)
+        self.color      = GHOST_COLORS[Ghost.num % 4]
+        Movable.__init__(self, maze, start, GHOST_SPEED)
+
+    def draw_me(self):
+        maze = self.maze
+        (screen_x, screen_y) = maze.to_screen(self.place)
+        body_points = []
+        for (x,y) in GHOST_SHAPE:
+            body_points.append(gx.Point(x*GRID_SIZE + screen_x, y*GRID_SIZE + screen_y))
+        self.body = gx.Polygon(*body_points)
+        self.body.setFill(self.color)
+        self.body.setOutline(self.color)
+
+    def move(self):
+        (cur_x, cur_y)   = self.place
+        (next_x, next_y) = self.next_point
+        move = (next_x - cur_x, next_y - cur_y)
+        move = self.furthest_move(move)
+        if move == (0,0):
+            move = self.choose_move()
+        self.move_by(move)
+
+    def choose_move(self):
+        (move_x, move_y) = self.movement
+        (near_x, near_y) = self.nearest_grid_point()
+        possible_moves = []
+
+        if move_x > 0 and self.can_move_by(( 1,  0)):
+            possible_moves.append(( 1,  0))
+        if move_x < 0 and self.can_move_by((-1,  0)):
+            possible_moves.append((-1,  0))
+        if move_y > 0 and self.can_move_by(( 0,  1)):
+            possible_moves.append(( 0,  1))
+        if move_y < 0 and self.can_move_by(( 0, -1)):
+            possible_moves.append(( 0, -1))
+
+        if len(possible_moves) != 0:
+            choice = random.randint(0, len(possible_moves)-1)
+            move   = possible_moves[choice]
+            (move_x, move_y) = move
+        else:
+            move_x = -move_x
+            move_y = -move_y
+            move   = (move_x, move_y)
+
+        (cur_x, cur_y)  = self.place
+        self.next_point = (cur_x + move_x, cur_y + move_y)
+
+        self.movement = move
+        return self.furthest_move(move)
+
+    def can_move_by(self, move):
+        move = self.furthest_move(move)
+        return move != (0,0)
+
+    def move_by(self, move):
+        self.update_position(move)
+        old_body  = self.body
+        self.draw_me()
+        old_body.undraw()
 
 #%% Instance variables
 
