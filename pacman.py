@@ -21,7 +21,7 @@ GRID_SIZE   = 30
 MARGIN      = GRID_SIZE
 PAC_SIZE    = GRID_SIZE * 0.8
 PAC_SPEED   = 0.25 # grid points per tick
-GHOST_SPEED = 0.25
+GHOST_SPEED = 0.20
 FOOD_SIZE   = GRID_SIZE * 0.15
 DEG_TO_RAD  = math.pi / 180
 
@@ -110,7 +110,7 @@ class Maze:
                 char = layout[y][x]
                 #print('make '+char+' at '+str(x)+', '+str(y))
                 self.make_object((x, y), char)
-        # loop through movables and move them
+        # loop through movables and draw them
         for mover in self.movables:
             mover.draw_me()
 
@@ -338,29 +338,17 @@ class Pacman(Movable):
     def move(self):
         keys = self.maze.win.lastKey
         if   'Left'  in keys:
-            self.move_left()
+            self.try_move((-1,  0))
         elif 'Right' in keys:
-            self.move_right()
+            self.try_move(( 1,  0))
         elif 'Up'    in keys:
-            self.move_up()
+            # directions reversed for graphics.py
+            self.try_move(( 0, -1))
         elif 'Down'  in keys:
-            self.move_down()
+            # directions reversed for graphics.py
+            self.try_move(( 0,  1))
         elif 'q'     in keys:
             self.maze.game_over = True
-
-    def move_left (self):
-        self.try_move((-1,  0))
-
-    def move_right(self):
-        self.try_move(( 1,  0))
-
-    def move_up   (self):
-        # directions reversed for graphics.py
-        self.try_move(( 0, -1))
-
-    def move_down (self):
-        # directions reversed for graphics.py
-        self.try_move(( 0,  1))
 
     def try_move(self, move):
         (move_x, move_y) = move
@@ -411,6 +399,7 @@ class Ghost(Movable):
 
     def __init__(self, maze, start):
         Ghost.num       += 1
+        self.place      = start
         self.next_point = start
         self.movement   = (0, 0)
         self.color      = GHOST_COLORS[Ghost.num % 4]
@@ -442,13 +431,13 @@ class Ghost(Movable):
         (near_x, near_y) = self.nearest_grid_point()
         possible_moves = []
 
-        if move_x > 0 and self.can_move_by(( 1,  0)):
+        if move_x >= 0 and self.can_move_by(( 1,  0)):
             possible_moves.append(( 1,  0))
-        if move_x < 0 and self.can_move_by((-1,  0)):
+        if move_x <= 0 and self.can_move_by((-1,  0)):
             possible_moves.append((-1,  0))
-        if move_y > 0 and self.can_move_by(( 0,  1)):
+        if move_y >= 0 and self.can_move_by(( 0,  1)):
             possible_moves.append(( 0,  1))
-        if move_y < 0 and self.can_move_by(( 0, -1)):
+        if move_y <= 0 and self.can_move_by(( 0, -1)):
             possible_moves.append(( 0, -1))
 
         if len(possible_moves) != 0:
