@@ -24,6 +24,9 @@ PAC_SPEED   = 0.25 # grid points per tick
 GHOST_SPEED = 0.20
 FOOD_SIZE   = GRID_SIZE * 0.15
 DEG_TO_RAD  = math.pi / 180
+CAP_SIZE    = GRID_SIZE * 0.3
+SCARED_TIME = 100
+WARN_TIME   = 50
 
 # Set colors
 BACKGROUND_COLOR = 'black'
@@ -31,6 +34,8 @@ WALL_COLOR       = gx.color_rgb(0.6 * 255, 0.9 * 255, 0.9 * 255)
 PAC_COLOR        = 'yellow'
 FOOD_COLOR       = 'red'
 GHOST_COLORS     = ['red','green','blue','purple']
+CAP_COLOR        = 'white'
+SCARED_COLOR     = 'white'
 
 # Ghost shape layout
 GHOST_SHAPE = [
@@ -149,6 +154,8 @@ class Maze:
         if character == 'G':
             ghost = Ghost(self, location)
             self.movables.append(ghost)
+        if character == 'o':
+            self.map[y][x] = Capsule(self, location)
 
     def make_map(self, width, height):
         # map of objects in the grid (initialized to all Nothing objects)
@@ -176,6 +183,12 @@ class Maze:
         self.food_count -= 1
         if self.food_count == 0:
             self.winner()
+
+    def remove_capsule(self, place):
+        (x, y) = place
+        self.map[y][x] = Nothing()
+        for mover in self.movables:
+            mover.capsule_eaten()
 
     def pacman_loc(self, mypac, location):
         for mover in self.movables:
@@ -214,6 +227,23 @@ class Immovable:
 
 class Nothing(Immovable):
     pass
+
+class Capsule(Immovable):
+    def __init__(self, maze, point):
+        self.place        = point
+        self.screen_point = maze.to_screen(point)
+        self.maze         = maze
+        self.draw_me()
+
+    def draw_me(self):
+        self.dot = gx.Circle(gx.Point(*self.screen_point), CAP_SIZE)
+        self.dot.setFill(CAP_COLOR)
+        self.dot.setOutline(CAP_COLOR)
+        self.dot.draw(self.maze.win)
+
+    def eat_me(self, mypac):
+        self.dot.undraw()
+        self.maze.remove_capsule(self.place)
 
 class Food(Immovable):
     def __init__(self, maze, point):
@@ -320,6 +350,9 @@ class Movable:
         (new_x, new_y)   = (old_x + move_x, old_y + move_y)
         self.place = (new_x, new_y)
 
+    def capsule_eaten(self):
+        pass
+
 class Pacman(Movable):
     def __init__(self, maze, location):
         Movable.__init__(self, maze, location, PAC_SPEED)
@@ -418,6 +451,9 @@ class Ghost(Movable):
         self.next_point = start
         self.movement   = (0, 0)
         self.color      = GHOST_COLORS[Ghost.num % 4]
+        self.orig_color = self.color
+        self.time_left  = 0
+        self.start      = start
         Movable.__init__(self, maze, start, GHOST_SPEED)
 
     def draw_me(self):
@@ -432,6 +468,14 @@ class Ghost(Movable):
         self.body.setOutline(self.color)
         self.body.draw(maze.win)
 
+    def capsule_eaten(self):
+        self.change_color(SCARED_COLOR)
+        self.time_left = SCARED_TIME
+
+    def change_color(self, new_color):
+        self.color = new_color
+        self.body.setFill(new_color)
+
     def move(self):
         (cur_x, cur_y)   = self.place
         (next_x, next_y) = self.next_point
@@ -440,6 +484,18 @@ class Ghost(Movable):
         if move == (0,0):
             move = self.choose_move()
         self.move_by(move)
+        if self.time_left > 0:
+            self.update_scared()
+
+    def update_scared(self):
+        self.time_left = self.time_left - 1
+        time_left      = self.time_left
+        if time_left < WARN_TIME:
+            if time_left % 2 == 0:
+                color = self.orig_color
+            else:
+                color = SCARED_COLOR
+            self.change_color(color)
 
     def choose_move(self):
         (move_x, move_y) = self.movement
@@ -490,7 +546,17 @@ class Ghost(Movable):
             self.bump_into(mypac)
 
     def bump_into(self, mypac):
-        self.maze.loser()
+        if self.time_left != 0:
+            self.captured(mypac)
+        else:
+            self.maze.loser()
+
+    def captured(self, mypac):
+        self.place = self.start
+        self.color = self.orig_color
+        self.time_left = 0
+        self.body.undraw()
+        self.draw_me()
 
 #%% Instance variables
 
