@@ -177,10 +177,21 @@ class Maze:
         if self.food_count == 0:
             self.winner()
 
+    def pacman_loc(self, mypac, location):
+        for mover in self.movables:
+            mover.pacman_loc(mypac, location)
+
     def finished(self):
         return self.game_over
 
     def winner(self):
+        self.game_over = True
+
+    def loser(self):
+        message = gx.Text(gx.Point(self.win.getWidth()/2, self.win.getHeight()/4),
+                          'You Lose!')
+        message.setTextColor('white')
+        message.draw(self.win)
         self.game_over = True
 
     def play(self):
@@ -349,6 +360,7 @@ class Pacman(Movable):
             self.try_move(( 0,  1))
         elif 'q'     in keys:
             self.maze.game_over = True
+        self.maze.pacman_loc(self, self.place)
 
     def try_move(self, move):
         (move_x, move_y) = move
@@ -393,6 +405,9 @@ class Pacman(Movable):
             self.direction = 180
         elif move_y < 0:
             self.direction = 270
+
+    def pacman_loc(self, mypac, location):
+        pass
 
 class Ghost(Movable):
     num = 0
@@ -464,6 +479,18 @@ class Ghost(Movable):
         old_body  = self.body
         self.draw_me()
         old_body.undraw()
+
+    def pacman_loc(self, mypac, location):
+        (my_x, my_y)     = self.place
+        (pac_x, pac_y)   = location
+        (delt_x, delt_y) = (my_x - pac_x, my_y - pac_y)
+        dis_sq           = delt_x*delt_x + delt_y*delt_y
+        limit            = 1.6*1.6
+        if dis_sq < limit:
+            self.bump_into(mypac)
+
+    def bump_into(self, mypac):
+        self.maze.loser()
 
 #%% Instance variables
 
