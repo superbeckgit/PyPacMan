@@ -362,10 +362,16 @@ class Pacman(Movable):
         maze         = self.maze
         screen_point = maze.to_screen(self.place)
         angle        = (self.get_angle()+self.direction) * DEG_TO_RAD
-        #mouthpoints  = (self.direction + angle, self.direction + 360 - angle)
         mouthpoints = []
-        mouthpoints.append((screen_point[0] + PAC_SIZE *math.cos(angle), screen_point[1] + PAC_SIZE *math.sin(angle)))
-        mouthpoints.append((screen_point[0] + PAC_SIZE *math.cos(angle), screen_point[1] - PAC_SIZE *math.sin(angle)))
+        # set mouth verticies based on direction
+        if self.direction in [0, 180]:
+            # +/- sin for left and right
+            mouthpoints.append((screen_point[0] + PAC_SIZE *math.cos(angle), screen_point[1] + PAC_SIZE *math.sin(angle)))
+            mouthpoints.append((screen_point[0] + PAC_SIZE *math.cos(angle), screen_point[1] - PAC_SIZE *math.sin(angle)))
+        else:
+            # +/- cos for up and down
+            mouthpoints.append((screen_point[0] + PAC_SIZE *math.cos(angle), screen_point[1] + PAC_SIZE *math.sin(angle)))
+            mouthpoints.append((screen_point[0] - PAC_SIZE *math.cos(angle), screen_point[1] + PAC_SIZE *math.sin(angle)))
         self.body    = gx.Circle(gx.Point(*screen_point),PAC_SIZE)
         self.mouth   = gx.Polygon([gx.Point(*screen_point), gx.Point(*[math.ceil(x) for x in mouthpoints[0]]), gx.Point(*[math.ceil(x) for x in mouthpoints[1]])])
         self.body.setFill(PAC_COLOR)
