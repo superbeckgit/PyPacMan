@@ -89,23 +89,44 @@ class Maze:
         updates location of all objects in map
         controls master game state (win/lose)
 
+        Parameters:
+            food_count : number of food objects in map
+            game_over  : T/F to end gameplay
+            height     : map height in objects
+            map        : 2D array of objects
+            movables   : list of movable objects
+            width      : map width in objects
+            win        : graphics window object
+
         Methods:
-            __init__ : Calls for map initialization
+            __init__        : Initialize parameters and maze layout
             prompt_to_close : Put up player prompt for click to close
-            set_layout :
+            set_layout      :
+            make_window     :
+            make_map        :
+            to_screen       :
+            make_object     :
+            object_at       :
+            remove_food     :
+            remove_capsule  :
+            pacman_loc      :
+            finished        :
+            winner          :
+            loser           :
+            play            :
+            done            :
     """
 
     def __init__(self):
-        """ Calls for map initialization """
-        # No window yet
-        self.have_window = False
-        # Game not over yet
+        """ Initialize parameters and maze layout """
+        # initialize maze parameters
         self.game_over   = False
-        self.movables = []
-        self.food_count = 0
-        self.win = None
-        self.map = None
-        self.winner = None
+        self.movables    = []
+        self.food_count  = 0
+        self.win         = None
+        self.map         = []
+        self.height      = None
+        self.width       = None
         # Initialize all objects in the layout
         self.set_layout(my_layout)
 
@@ -119,40 +140,56 @@ class Maze:
         self.win.close()
 
     def set_layout(self, layout):
-        """ loop through objects in master layout and initialize them """
-        height = len(layout)
-        width  = len(layout[0])
-        self.win = self.make_window(width, height)
-        self.make_map(width, height)
+        """ set height and wideth parameters
+            initialize window graphics object
+            calls for map to be drawn
+            loop through objects in master layout and initialize them
+        """
+        self.height = len(layout)
+        self.width  = len(layout[0])
+        self.win    = self.make_window()
+        self.make_map()
         # loop through layout and create objects
-        for x in range(width):
-            for y in range(height):
+        for x in range(self.width):
+            for y in range(self.height):
                 char = layout[y][x]
-                #print('make '+char+' at '+str(x)+', '+str(y))
                 self.make_object((x, y), char)
         # loop through movables and draw them
         for mover in self.movables:
             mover.draw_me()
 
-    def make_window(self, width, height):
-        # makes and returns the main game window
-        grid_width    = (width-1)  * GRID_SIZE
-        grid_height   = (height-1) * GRID_SIZE
+    def make_window(self):
+        """ makes and returns main game window object """
+        grid_width    = (self.width-1)  * GRID_SIZE
+        grid_height   = (self.height-1) * GRID_SIZE
         screen_width  = 2*MARGIN + grid_width
         screen_height = 2*MARGIN + grid_height
         # start window
-        win = gx.GraphWin(title = 'PacMan!', width = screen_width, height = screen_height)
+        win = gx.GraphWin(title = 'PacMan!',
+                          width = screen_width,
+                          height = screen_height)
         win.setBackground(BACKGROUND_COLOR)
         return win
 
+    def make_map(self):
+        """ Initialize map of Nothing objects """
+        for y in range(self.height):
+            new_row = []
+            # fill row list with nothing objects
+            for x in range(self.width):
+                new_row.append(Nothing())
+            # append row list to map
+            self.map.append(new_row)
+
     def to_screen(self, point):
-        # convert from map coordinates to screen coordinates
+        """ convert from map coordinates to screen coordinates """
         (x, y) = point
         x = x*GRID_SIZE + MARGIN
         y = y*GRID_SIZE + MARGIN
         return (x, y)
 
     def make_object(self, location, character):
+        """ initialize all objects on map """
         (x, y) = location
         if character == '%':
             # it's a wall
@@ -162,35 +199,33 @@ class Maze:
             mypac = Pacman(self, location)
             self.movables.append(mypac)
         if character == '.':
+            # it's food
             self.food_count += 1
             self.map[y][x]   = Food(self, location)
         if character == 'G':
+            # it's a ghost
             ghost = Ghost(self, location)
             self.movables.append(ghost)
         if character == 'o':
+            # it's a power capsule
             self.map[y][x] = Capsule(self, location)
 
-    def make_map(self, width, height):
-        # map of objects in the grid (initialized to all Nothing objects)
-        self.width  = width
-        self.height = height
-        self.map    = []
-        for y in range(height):
-            new_row = []
-            for x in range(width):
-                new_row.append(Nothing())
-            self.map.append(new_row)
-
     def object_at(self, location):
+        """ return the object in the map at desired location """
         (x, y) = location
         # check for out of bounds locations and return Nothing object
         if y < 0 or y >= self.height:
             return Nothing()
         if x < 0 or x >= self.width:
             return Nothing()
+        # return object at location for valid locations
         return self.map[y][x]
 
     def remove_food(self, place):
+        """ replace food object with nothing object,
+            decrease food count
+            check for win condition (ate all food)
+        """
         (x, y) = place
         self.map[y][x]   = Nothing()
         self.food_count -= 1
@@ -198,35 +233,48 @@ class Maze:
             self.winner()
 
     def remove_capsule(self, place):
+        """ replace power capsule with nothing object
+            trigger ghost fear
+        """
         (x, y) = place
         self.map[y][x] = Nothing()
+        # tricgger ghost fear for all ghosts
         for mover in self.movables:
             mover.capsule_eaten()
 
     def pacman_loc(self, mypac, location):
+        """ update all movers with pacman location """
         for mover in self.movables:
             mover.pacman_loc(mypac, location)
 
     def finished(self):
+        """ return game status, game_over(T) or not(F)? """
         return self.game_over
 
     def winner(self):
+        """ set game over flag to true """
         self.game_over = True
 
     def loser(self):
-        message = gx.Text(gx.Point(self.win.getWidth()/2, self.win.getHeight()/4),
-                          'You Lose!')
+        """ send player message of loss and set game over flag to true """
+        mes_loc = gx.Point(self.win.getWidth()/2, self.win.getHeight()/4)
+        message = gx.Text(mes_loc, 'You Lose!')
         message.setTextColor('white')
         message.draw(self.win)
         self.game_over = True
 
     def play(self):
+        """ Move all movables
+            Update window graphic object
+            Insert game delay
+        """
         for mover in self.movables:
             mover.move()
         self.win.update()
         time.sleep(0.05);
 
     def done(self):
+        """ Release map and movable objects, call for closure """
         self.map = []
         self.movables = []
         self.prompt_to_close()
