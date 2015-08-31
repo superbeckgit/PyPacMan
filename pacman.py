@@ -83,32 +83,47 @@ my_layout = [x.strip() for x in raw_layout.split('\n') if x.strip()]
 
 #%% Class Definitions
 class Maze:
+    """ Maze class
+        opens a graphic window
+        initializes all objects in map layout
+        updates location of all objects in map
+        controls master game state (win/lose)
+
+        Methods:
+            __init__ : Calls for map initialization
+            prompt_to_close : Put up player prompt for click to close
+            set_layout :
+    """
+
     def __init__(self):
-        # do you have a window yet?
+        """ Calls for map initialization """
+        # No window yet
         self.have_window = False
-        # did the player fail?
+        # Game not over yet
         self.game_over   = False
-        # initialize all objects in the layout
+        self.movables = []
+        self.food_count = 0
+        self.win = None
+        self.map = None
+        self.winner = None
+        # Initialize all objects in the layout
         self.set_layout(my_layout)
-        # set loop rate (Hz) MJB tbd
-        # set_speed(20)
 
     def prompt_to_close(self):
-        message = gx.Text(gx.Point(self.win.getWidth()/2, self.win.getHeight()/2),
-                          'Click anywhere to quit.')
+        """ Put up player prompt for click to close, close window """
+        mes_loc = gx.Point(self.win.getWidth()/2, self.win.getHeight()/2)
+        message = gx.Text(mes_loc, 'Click anywhere to quit.')
         message.setTextColor('white')
         message.draw(self.win)
         self.win.getMouse()
         self.win.close()
 
     def set_layout(self, layout):
+        """ loop through objects in master layout and initialize them """
         height = len(layout)
         width  = len(layout[0])
         self.win = self.make_window(width, height)
         self.make_map(width, height)
-        self.movables   = []
-        self.food_count = 0
-
         # loop through layout and create objects
         for x in range(width):
             for y in range(height):
@@ -118,8 +133,6 @@ class Maze:
         # loop through movables and draw them
         for mover in self.movables:
             mover.draw_me()
-
-        #self.prompt_to_close()
 
     def make_window(self, width, height):
         # makes and returns the main game window
