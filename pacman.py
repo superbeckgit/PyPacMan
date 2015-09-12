@@ -322,11 +322,10 @@ class Capsule(Immovable):
             place        : location in map
             screen_point : location on screen
 
-
         Methods:
             __init__ : Initialize all capsule parameters
             draw_me  : Initialize graphics object and draw on window
-            eat_me   : capsule removal logic
+            eat_me   : Triggers capsule removal logic
     """
 
     def __init__(self, maze, point):
@@ -344,29 +343,65 @@ class Capsule(Immovable):
         self.dot.draw(self.maze.win)
 
     def eat_me(self, mypac):
-        """ capsule removal logic """
+        """ Triggers capsule removal logic """
         self.dot.undraw()
         self.maze.remove_capsule(self.place)
 
+
 class Food(Immovable):
+    """ Food Class [inherits from Immovable]
+            Non-mobile food objects in the map, player wins if all are eaten
+
+        Parameters:
+            dot          : graphics object
+            maze         : handle for maze object
+            place        : location in map
+            screen_point : location on screen
+
+        Methods:
+            __init__ : Initialize all food parameters
+            draw_me  : Initialize graphics object and draw on window
+            eat_me   : Triggers food removal logic
+    """
+
     def __init__(self, maze, point):
+        """ Initialize all food parameters """
         self.place        = point
         self.screen_point = maze.to_screen(point)
         self.maze         = maze
         self.draw_me()
 
     def draw_me(self):
+        """ Initialize graphics object and draw on window """
         self.dot = gx.Circle(gx.Point(*self.screen_point),FOOD_SIZE)
         self.dot.setFill(FOOD_COLOR)
         self.dot.setOutline(FOOD_COLOR)
         self.dot.draw(self.maze.win)
 
     def eat_me(self, pacman):
+        """ Triggers capsule removal logic """
         self.dot.undraw()
         self.maze.remove_food(self.place)
 
+
 class Wall(Immovable):
+    """ Wall Class [inherits from Immovable]
+            Non-mobile wall objects in the map
+
+        Parameters:
+            maze         : handle for maze object
+            neighbors    : list of coords surrounding wall coords
+            place        : location in map
+            screen_point : location on screen
+
+        Methods:
+            __init__       : Initialize all wall parameters
+            check_neighbor : Check if neighbor object is a wall, if so draw line
+            draw_me        : Initialize graphics object and draw on window
+            is_wall        : Inherited/Overloaded, returns True
+    """
     def __init__(self, maze, location):
+        """ Initialize all wall parameters """
         self.place        = location
         (x, y)            = self.place
         self.neighbors    = [(x+1, y),(x-1, y),(x, y+1),(x, y-1)]
@@ -375,19 +410,23 @@ class Wall(Immovable):
         self.draw_me(maze.win)
 
     def draw_me(self, win):
+        """ Initialize graphics object and draw on window """
         (screen_x, screen_y) = self.screen_point
         for point in self.neighbors:
-            self.check_neightbor(point)
+            self.check_neighbor(point)
 
     def is_wall(self):
+        """ Inherited/Overloaded, returns True """
         return True
 
-    def check_neightbor(self, location):
-        # check if neighbor object is a wall, if so draw line
+    def check_neighbor(self, location):
+        """ Check if neighbor object is a wall, if so draw line """
         neighbor = self.maze.object_at(location)
         if neighbor.is_wall():
             a = self.screen_point
             b = neighbor.screen_point
+            # line object is drawn once, never needed again
+            # No need to make a parameter like food/capsule dot objects
             my_line = gx.Line(gx.Point(*a), gx.Point(*b))
             my_line.setWidth(2)
             my_line.setOutline(WALL_COLOR)
