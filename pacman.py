@@ -6,6 +6,8 @@ project guide at http://www.openbookproject.net/pybiblio/gasp/course/6-chomp.htm
 @author: Matt Beck
 """
 
+# pylint: disable=C0326,
+
 #%% Imports
 from __future__ import print_function
 from __future__ import division
@@ -271,7 +273,7 @@ class Maze:
         for mover in self.movables:
             mover.move()
         self.win.update()
-        time.sleep(0.05);
+        time.sleep(0.05)
 
     def done(self):
         """ Release map and movable objects, call for closure """
@@ -388,7 +390,8 @@ class Wall(Immovable):
     """ Wall Class [inherits from Immovable]
             Non-mobile wall objects in the map
 
-        Parameters:
+        Parameters
+        ----------
             maze         : handle for maze object
             neighbors    : list of coords surrounding wall coords
             place        : location in map
@@ -732,3 +735,8 @@ if __name__ == '__main__':
     win.getMouse()
     win.close()
     """
+""" with numpydoc standards, run examples with
+    >>>import doctest
+    >>>doctest.testmod(verbose=False)
+    in __name__ == __main__ block
+"""
