@@ -101,20 +101,20 @@ class Maze:
         Methods:
             __init__        : Initialize parameters and maze layout
             prompt_to_close : Put up player prompt for click to close
-            set_layout      :
-            make_window     :
-            make_map        :
-            to_screen       :
-            make_object     :
-            object_at       :
-            remove_food     :
-            remove_capsule  :
-            pacman_loc      :
-            finished        :
-            winner          :
-            loser           :
-            play            :
-            done            :
+            set_layout      : initialize window object and objects in map
+            make_window     : make and return main game window
+            make_map        : initialize map of Nothing objects
+            to_screen       : convert from map coords to screen coords
+            make_object     : initialize objects in map
+            object_at       : return object at specified map coords
+            remove_food     : process food removal logic & win check
+            remove_capsule  : process capsule removal and ghost fear
+            pacman_loc      : update all movers with pacman location
+            finished        : return game status, game_over(T) or not(F)?
+            winner          : set game over flag to true
+            loser           : send player message of loss, set game over flag to true
+            play            : Move movers, update window graphic object, animation delay
+            done            : Release map and movable objects, call for closure
     """
 
     def __init__(self):
@@ -279,30 +279,72 @@ class Maze:
         self.movables = []
         self.prompt_to_close()
 
+
 class Immovable:
+    """ Immovable Class
+            Basic non-mobile objects in the map, includes walls and food items
+
+        Parameters:
+            NONE
+
+        Methods:
+            eat_me  : empty method, used by child classes
+            is_wall : return T/F if object is wall, set by child classes
+    """
+
     def eat_me(self, pacman):
+        """ empty method, used by child classes """
         pass
 
     def is_wall(self):
+        """ return T/F if object is wall, set by child classes """
         return False
 
 class Nothing(Immovable):
+    """ Nothing Class [inherits from Immovable]
+            Non-mobile objects in the map, used to fill empty locations
+
+        Parameters:
+            NONE
+
+        Methods:
+            NONE
+    """
     pass
 
 class Capsule(Immovable):
+    """ Capsule Class [inherits from Immovable]
+            Non-mobile capsule objects in the map, causes ghost fear when eaten
+
+        Parameters:
+            dot          : graphics object
+            maze         : handle for maze object
+            place        : location in map
+            screen_point : location on screen
+
+
+        Methods:
+            __init__ : Initialize all capsule parameters
+            draw_me  : Initialize graphics object and draw on window
+            eat_me   : capsule removal logic
+    """
+
     def __init__(self, maze, point):
+        """ Initialize all capsule parameters """
         self.place        = point
         self.screen_point = maze.to_screen(point)
         self.maze         = maze
         self.draw_me()
 
     def draw_me(self):
+        """ Initialize graphics object and draw on window """
         self.dot = gx.Circle(gx.Point(*self.screen_point), CAP_SIZE)
         self.dot.setFill(CAP_COLOR)
         self.dot.setOutline(CAP_COLOR)
         self.dot.draw(self.maze.win)
 
     def eat_me(self, mypac):
+        """ capsule removal logic """
         self.dot.undraw()
         self.maze.remove_capsule(self.place)
 
