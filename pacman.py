@@ -184,14 +184,29 @@ class Maze:
             self.map.append(new_row)
 
     def to_screen(self, point):
-        """ convert from map coordinates to screen coordinates """
+        """ convert from map coordinates to screen coordinates
+
+        Parameters
+        ----------
+        point : integer touple within map constraints
+
+        """
         (x, y) = point
         x = x*GRID_SIZE + MARGIN
         y = y*GRID_SIZE + MARGIN
         return (x, y)
 
     def make_object(self, location, character):
-        """ initialize all objects on map """
+        """ initialize all objects on map
+
+        Parameters
+        ----------
+        location : integer touple within map constraints
+            denotes location of object in map
+        character: char in {%, P, ., G, o}
+            denotes type of object to create
+
+        """
         (x, y) = location
         if character == '%':
             # it's a wall
@@ -213,7 +228,14 @@ class Maze:
             self.map[y][x] = Capsule(self, location)
 
     def object_at(self, location):
-        """ return the object in the map at desired location """
+        """ return the object in the map at desired location
+
+        Parameters
+        ----------
+        location : integer touple within map constraints
+            denotes location in map to check for an object
+
+        """
         (x, y) = location
         # check for out of bounds locations and return Nothing object
         if y < 0 or y >= self.height:
@@ -224,9 +246,16 @@ class Maze:
         return self.map[y][x]
 
     def remove_food(self, place):
-        """ replace food object with nothing object,
-            decrease food count
-            check for win condition (ate all food)
+        """
+        replace food object with nothing object,
+        decrease food count
+        check for win condition (ate all food)
+
+        Parameters
+        ----------
+        place : integer touple within map constraints
+            denotes location in map to remove food from
+
         """
         (x, y) = place
         self.map[y][x]   = Nothing()
@@ -237,6 +266,12 @@ class Maze:
     def remove_capsule(self, place):
         """ replace power capsule with nothing object
             trigger ghost fear
+
+        Parameters
+        ----------
+        place : integer touple within map constraints
+            denotes location in map to remove capsule from
+
         """
         (x, y) = place
         self.map[y][x] = Nothing()
@@ -245,7 +280,16 @@ class Maze:
             mover.capsule_eaten()
 
     def pacman_loc(self, mypac, location):
-        """ update all movers with pacman location """
+        """ update all movers with pacman location
+
+        Parameters
+        ----------
+        mypac    : pacman object
+        location : integer touple within map constraints
+            denotes location in map to remove food from
+
+        """
+
         for mover in self.movables:
             mover.pacman_loc(mypac, location)
 
@@ -673,7 +717,6 @@ class Ghost(Movable):
 
         (cur_x, cur_y)  = self.place
         self.next_point = (cur_x + move_x, cur_y + move_y)
-
         self.movement = move
         return self.furthest_move(move)
 
