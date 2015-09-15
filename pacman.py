@@ -9,6 +9,7 @@ project guide at http://www.openbookproject.net/pybiblio/gasp/course/6-chomp.htm
 # pylint: disable=C0326,
 
 #%% Imports
+from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 import graphics as gx
@@ -85,42 +86,52 @@ my_layout = [x.strip() for x in raw_layout.split('\n') if x.strip()]
 
 #%% Class Definitions
 class Maze:
-    """ Maze class
+    r""" Maze class
         opens a graphic window
         initializes all objects in map layout
         updates location of all objects in map
         controls master game state (win/lose)
 
-        Parameters:
-            food_count : number of food objects in map
-            game_over  : T/F to end gameplay
-            height     : map height in objects
-            map        : 2D array of objects
-            movables   : list of movable objects
-            width      : map width in objects
-            win        : graphics window object
+        Attributes
+        ----------
+        food_count : number of food objects in map
+        game_over  : T/F to end gameplay
+        height     : map height in objects
+        map        : 2D array of objects
+        movables   : list of movable objects
+        width      : map width in objects
+        win        : graphics window object
 
-        Methods:
-            __init__        : Initialize parameters and maze layout
-            prompt_to_close : Put up player prompt for click to close
-            set_layout      : initialize window object and objects in map
-            make_window     : make and return main game window
-            make_map        : initialize map of Nothing objects
-            to_screen       : convert from map coords to screen coords
-            make_object     : initialize objects in map
-            object_at       : return object at specified map coords
-            remove_food     : process food removal logic & win check
-            remove_capsule  : process capsule removal and ghost fear
-            pacman_loc      : update all movers with pacman location
-            finished        : return game status, game_over(T) or not(F)?
-            winner          : set game over flag to true
-            loser           : send player message of loss, set game over flag to true
-            play            : Move movers, update window graphic object, animation delay
-            done            : Release map and movable objects, call for closure
+        Methods
+        -------
+        __init__        : Initialize parameters and maze layout
+        prompt_to_close : Put up player prompt for click to close
+        set_layout      : initialize window object and objects in map
+        make_window     : make and return main game window
+        make_map        : initialize map of Nothing objects
+        to_screen       : convert from map coords to screen coords
+        make_object     : initialize objects in map
+        object_at       : return object at specified map coords
+        remove_food     : process food removal logic & win check
+        remove_capsule  : process capsule removal and ghost fear
+        pacman_loc      : update all movers with pacman location
+        finished        : return game status, game_over(T) or not(F)?
+        winner          : set game over flag to true
+        loser           : send player message of loss, set game over flag to true
+        play            : Move movers, update window graphic object, animation delay
+        done            : Release map and movable objects, call for closure
     """
 
-    def __init__(self):
-        """ Initialize parameters and maze layout """
+    def __init__(self, layout):
+        r""" 
+        Initialize parameters and maze layout
+
+        Parameters
+        ----------
+        layout  : [1x15] of (31x1) strings specifying maze layout via characters in the
+            set {'%', 'P', '.', 'G', 'o'}
+        
+        """
         # initialize maze parameters
         self.game_over   = False
         self.movables    = []
@@ -130,7 +141,7 @@ class Maze:
         self.height      = None
         self.width       = None
         # Initialize all objects in the layout
-        self.set_layout(my_layout)
+        self.set_layout(layout)
 
     def prompt_to_close(self):
         """ Put up player prompt for click to close, close window """
@@ -142,10 +153,17 @@ class Maze:
         self.win.close()
 
     def set_layout(self, layout):
-        """ set height and wideth parameters
-            initialize window graphics object
-            calls for map to be drawn
-            loop through objects in master layout and initialize them
+        r""" 
+        set height and wideth attributes
+        initialize window graphics object
+        calls for map to be drawn
+        loop through objects in master layout and initialize them
+        
+        Parameters
+        ----------
+        layout  : [1x15] of (31x1) strings specifying maze layout via characters in the
+            set {'%', 'P', '.', 'G', 'o'}
+
         """
         self.height = len(layout)
         self.width  = len(layout[0])
@@ -161,7 +179,14 @@ class Maze:
             mover.draw_me()
 
     def make_window(self):
-        """ makes and returns main game window object """
+        r""" 
+        Makes and returns main game window object 
+        
+        Returns
+        -------
+        win : graphics window object
+
+        """
         grid_width    = (self.width-1)  * GRID_SIZE
         grid_height   = (self.height-1) * GRID_SIZE
         screen_width  = 2*MARGIN + grid_width
@@ -184,12 +209,12 @@ class Maze:
             self.map.append(new_row)
 
     def to_screen(self, point):
-        """ convert from map coordinates to screen coordinates
+        r""" convert from map coordinates to screen coordinates
 
         Parameters
         ----------
         point : integer touple within map constraints
-
+            denotes location of object in map
         """
         (x, y) = point
         x = x*GRID_SIZE + MARGIN
@@ -197,7 +222,7 @@ class Maze:
         return (x, y)
 
     def make_object(self, location, character):
-        """ initialize all objects on map
+        r""" initialize all objects on map
 
         Parameters
         ----------
@@ -228,7 +253,7 @@ class Maze:
             self.map[y][x] = Capsule(self, location)
 
     def object_at(self, location):
-        """ return the object in the map at desired location
+        r""" return the object in the map at desired location
 
         Parameters
         ----------
@@ -246,7 +271,7 @@ class Maze:
         return self.map[y][x]
 
     def remove_food(self, place):
-        """
+        r"""
         replace food object with nothing object,
         decrease food count
         check for win condition (ate all food)
@@ -264,7 +289,7 @@ class Maze:
             self.winner()
 
     def remove_capsule(self, place):
-        """ replace power capsule with nothing object
+        r""" replace power capsule with nothing object
             trigger ghost fear
 
         Parameters
@@ -280,7 +305,7 @@ class Maze:
             mover.capsule_eaten()
 
     def pacman_loc(self, mypac, location):
-        """ update all movers with pacman location
+        r""" update all movers with pacman location
 
         Parameters
         ----------
@@ -289,20 +314,26 @@ class Maze:
             denotes location in map to remove food from
 
         """
-
         for mover in self.movables:
             mover.pacman_loc(mypac, location)
 
     def finished(self):
-        """ return game status, game_over(T) or not(F)? """
+        r""" 
+        Return game status, game_over(T) or not(F)? 
+        
+        Returns
+        -------
+        bool game status T=game_over, F=play
+
+        """
         return self.game_over
 
     def winner(self):
-        """ set game over flag to true """
+        r""" set game over flag to true """
         self.game_over = True
 
     def loser(self):
-        """ send player message of loss and set game over flag to true """
+        r""" send player message of loss and set game over flag to true """
         mes_loc = gx.Point(self.win.getWidth()/2, self.win.getHeight()/4)
         message = gx.Text(mes_loc, 'You Lose!')
         message.setTextColor('white')
@@ -310,7 +341,7 @@ class Maze:
         self.game_over = True
 
     def play(self):
-        """ Move all movables
+        r""" Move all movables
             Update window graphic object
             Insert game delay
         """
@@ -320,22 +351,20 @@ class Maze:
         time.sleep(0.05)
 
     def done(self):
-        """ Release map and movable objects, call for closure """
+        r""" Release map and movable objects, call for closure """
         self.map = []
         self.movables = []
         self.prompt_to_close()
 
 
 class Immovable:
-    """ Immovable Class
+    r""" Immovable Class
             Basic non-mobile objects in the map, includes walls and food items
-
-        Parameters:
-            NONE
 
         Methods:
             eat_me  : empty method, used by child classes
             is_wall : return T/F if object is wall, set by child classes
+
     """
 
     def eat_me(self, pacman):
@@ -350,11 +379,6 @@ class Nothing(Immovable):
     """ Nothing Class [inherits from Immovable]
             Non-mobile objects in the map, used to fill empty locations
 
-        Parameters:
-            NONE
-
-        Methods:
-            NONE
     """
     pass
 
@@ -362,93 +386,133 @@ class Capsule(Immovable):
     """ Capsule Class [inherits from Immovable]
             Non-mobile capsule objects in the map, causes ghost fear when eaten
 
-        Parameters:
-            dot          : graphics object
-            maze         : handle for maze object
-            place        : location in map
-            screen_point : location on screen
+        Attirubutes
+        -----------
+        dot          : graphics object
+        maze         : maze object
+        place        : location in map
+        screen_point : location on screen
 
         Methods:
-            __init__ : Initialize all capsule parameters
-            draw_me  : Initialize graphics object and draw on window
-            eat_me   : Triggers capsule removal logic
+        __init__ : Initialize all capsule parameters
+        draw_me  : Initialize graphics object and draw on window
+        eat_me   : Triggers capsule removal logic
     """
 
     def __init__(self, maze, point):
-        """ Initialize all capsule parameters """
+        r""" 
+        Initialize all capsule attributes
+        
+        Parameters
+        ----------
+        maze  : maze object
+        point : (1,2) integer tuple 
+            location in map
+        
+        """
         self.place        = point
         self.screen_point = maze.to_screen(point)
         self.maze         = maze
         self.draw_me()
 
     def draw_me(self):
-        """ Initialize graphics object and draw on window """
+        r""" Initialize graphics object and draw on window """
         self.dot = gx.Circle(gx.Point(*self.screen_point), CAP_SIZE)
         self.dot.setFill(CAP_COLOR)
         self.dot.setOutline(CAP_COLOR)
         self.dot.draw(self.maze.win)
 
     def eat_me(self, mypac):
-        """ Triggers capsule removal logic """
+        r""" Triggers capsule removal logic """
         self.dot.undraw()
         self.maze.remove_capsule(self.place)
 
 
 class Food(Immovable):
-    """ Food Class [inherits from Immovable]
-            Non-mobile food objects in the map, player wins if all are eaten
+    r""" 
+    Food Class [inherits from Immovable]
+        Non-mobile food objects in the map, player wins if all are eaten
 
-        Parameters:
-            dot          : graphics object
-            maze         : handle for maze object
-            place        : location in map
-            screen_point : location on screen
+    Attributes
+    ----------
+    dot   : graphics object
+    maze  : maze object
+    point : (1,2) integer tuple 
+        location in map
+    screen_point : (1,2) integer tuple 
+        location on screen
 
-        Methods:
-            __init__ : Initialize all food parameters
-            draw_me  : Initialize graphics object and draw on window
-            eat_me   : Triggers food removal logic
+    Methods
+    -------
+    __init__ : Initialize all food parameters
+    draw_me  : Initialize graphics object and draw on window
+    eat_me   : Triggers food removal logic
+
     """
 
     def __init__(self, maze, point):
-        """ Initialize all food parameters """
+        r""" 
+        Initialize all capsule Food attributes
+        
+        Parameters
+        ----------
+        maze  : maze object
+        point : (1,2) integer tuple 
+            location in map
+        
+        """
         self.place        = point
         self.screen_point = maze.to_screen(point)
         self.maze         = maze
         self.draw_me()
 
     def draw_me(self):
-        """ Initialize graphics object and draw on window """
+        r""" Initialize graphics object and draw on window """
         self.dot = gx.Circle(gx.Point(*self.screen_point),FOOD_SIZE)
         self.dot.setFill(FOOD_COLOR)
         self.dot.setOutline(FOOD_COLOR)
         self.dot.draw(self.maze.win)
 
     def eat_me(self, pacman):
-        """ Triggers capsule removal logic """
+        r""" Triggers capsule removal logic """
         self.dot.undraw()
         self.maze.remove_food(self.place)
 
 
 class Wall(Immovable):
-    """ Wall Class [inherits from Immovable]
-            Non-mobile wall objects in the map
+    r""" 
+    Wall Class [inherits from Immovable]
+        Non-mobile wall objects in the map
 
-        Parameters
-        ----------
-            maze         : handle for maze object
-            neighbors    : list of coords surrounding wall coords
-            place        : location in map
-            screen_point : location on screen
+    Attributes
+    ----------
+    maze      : maze object
+    neighbors : [1,4] of (1,2) tuples
+        list of coords surrounding wall coords
+    place : (1,2) integer tuple 
+        location in map
+    screen_point : (1,2) integer tuple 
+        location on screen
 
-        Methods:
-            __init__       : Initialize all wall parameters
-            check_neighbor : Check if neighbor object is a wall, if so draw line
-            draw_me        : Initialize graphics object and draw on window
-            is_wall        : Inherited/Overloaded, returns True
+    Methods
+    -------
+    __init__       : Initialize all wall attributes
+    check_neighbor : Check if neighbor object is a wall, if so draw line
+    draw_me        : Initialize graphics object and draw on window
+    is_wall        : Inherited/Overloaded, returns True
+
     """
     def __init__(self, maze, location):
-        """ Initialize all wall parameters """
+        r""" 
+        Initialize all capsule Wall attributes
+        
+        Parameters
+        ----------
+        maze     : maze object
+        location : (1,2) integer tuple 
+            location in map
+
+        """
         self.place        = location
         (x, y)            = self.place
         self.neighbors    = [(x+1, y),(x-1, y),(x, y+1),(x, y-1)]
@@ -457,17 +521,32 @@ class Wall(Immovable):
         self.draw_me(maze.win)
 
     def draw_me(self, win):
-        """ Initialize graphics object and draw on window """
+        r""" 
+        Initialize graphics object and draw on window
+
+        Parameters
+        ----------
+        win : graphics object for game window
+
+        """
         (screen_x, screen_y) = self.screen_point
         for point in self.neighbors:
             self.check_neighbor(point)
 
     def is_wall(self):
-        """ Inherited/Overloaded, returns True """
+        r""" Inherited/Overloaded, returns True """
         return True
 
     def check_neighbor(self, location):
-        """ Check if neighbor object is a wall, if so draw line """
+        r""" 
+        Check if neighbor object is a wall, if so draw line 
+
+        Parameters
+        ----------
+        location : (1,2) integer tuple 
+            location in map
+
+        """
         neighbor = self.maze.object_at(location)
         if neighbor.is_wall():
             a = self.screen_point
@@ -481,11 +560,32 @@ class Wall(Immovable):
 
 class Movable:
     def __init__(self, maze, location, speed):
+        r"""
+        Initialize movable attributes
+
+        Parameters
+        ----------
+        location : (1,2) integer tuple 
+            location in map
+        maze : Maze object
+        speed : float
+            object speed in grid points per second
+
+        """
         self.maze  = maze
         self.place = location
         self.speed = speed
 
     def furthest_move(self, move):
+        r"""
+        Truncate requested move if walls are in the way
+
+        Parameters
+        ----------
+        move : (1,2) float tuple
+            desired movement 
+        
+        """
         (move_x, move_y) = move
         (cur_x, cur_y)   = self.place
         (near_x, near_y) = self.nearest_grid_point()
@@ -530,10 +630,22 @@ class Movable:
         return (move_x, move_y)
 
     def nearest_grid_point(self):
+        r""" 
+        Rounds the object location to determine nearest integer grid point
+
+        Returns
+        -------
+        (1,2) int tuple
+            location of nearest grid point
+
+        """
         (cur_x, cur_y) = self.place
         return (int(round(cur_x)), int(round(cur_y)))
 
     def update_position(self, move):
+        r"""
+        
+        """
         (old_x, old_y)   = self.place
         (move_x, move_y) = move
         (new_x, new_y)   = (old_x + move_x, old_y + move_y)
@@ -757,7 +869,7 @@ class Ghost(Movable):
 
 #%% main run procedure
 if __name__ == '__main__':
-    my_maze = Maze()
+    my_maze = Maze(my_layout)
     while not my_maze.finished():
         my_maze.play()
     my_maze.done()
