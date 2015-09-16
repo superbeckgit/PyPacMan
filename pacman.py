@@ -1,3 +1,4 @@
+#!/home/mbeck/anaconda/bin/python
 # -*- coding: utf-8 -*-
 """
 Python implementation of PacMan game
