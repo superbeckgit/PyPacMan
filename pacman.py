@@ -1,4 +1,4 @@
-#!/home/mbeck/anaconda/bin/python
+#!/home/mbeck/anaconda/bin/python2
 # -*- coding: utf-8 -*-
 """
 Python implementation of PacMan game
@@ -9,7 +9,7 @@ project guide at http://www.openbookproject.net/pybiblio/gasp/course/6-chomp.htm
 
 # pylint: disable=C0326,
 
-#%% Imports
+# IMPORTS
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
@@ -19,7 +19,7 @@ import time
 import random
 
 
-#%% Global vars
+# GLOBALS
 # Set sizes in pixels
 GRID_SIZE   = 30
 MARGIN      = GRID_SIZE
@@ -34,7 +34,7 @@ WARN_TIME   = 50
 
 # Set colors
 BACKGROUND_COLOR = 'black'
-WALL_COLOR       = gx.color_rgb(0.6 * 255, 0.9 * 255, 0.9 * 255)
+WALL_COLOR       = gx.color_rgb(int(0.6 * 255), int(0.9 * 255), int(0.9 * 255))
 PAC_COLOR        = 'yellow'
 FOOD_COLOR       = 'red'
 GHOST_COLORS     = ['red','green','blue','purple']
@@ -85,7 +85,7 @@ raw_layout = r"""
 my_layout = [x.strip() for x in raw_layout.split('\n') if x.strip()]
 
 
-#%% Class Definitions
+# CLASSES
 class Maze:
     r""" Maze class
         opens a graphic window
@@ -301,7 +301,7 @@ class Maze:
         """
         (x, y) = place
         self.map[y][x] = Nothing()
-        # tricgger ghost fear for all ghosts
+        # trigger ghost fear for all ghosts
         for mover in self.movables:
             mover.capsule_eaten()
 
@@ -376,12 +376,14 @@ class Immovable:
         """ return T/F if object is wall, set by child classes """
         return False
 
+
 class Nothing(Immovable):
     """ Nothing Class [inherits from Immovable]
             Non-mobile objects in the map, used to fill empty locations
 
     """
     pass
+
 
 class Capsule(Immovable):
     """ Capsule Class [inherits from Immovable]
@@ -655,6 +657,7 @@ class Movable:
     def capsule_eaten(self):
         pass
 
+
 class Pacman(Movable):
     def __init__(self, maze, location):
         Movable.__init__(self, maze, location, PAC_SPEED)
@@ -749,6 +752,7 @@ class Pacman(Movable):
 
     def pacman_loc(self, mypac, location):
         pass
+
 
 class Ghost(Movable):
     num = 0
@@ -865,10 +869,9 @@ class Ghost(Movable):
         self.body.undraw()
         self.draw_me()
 
-#%% Instance variables
+# Instance variables
 
 
-#%% main run procedure
 if __name__ == '__main__':
     my_maze = Maze(my_layout)
     while not my_maze.finished():
@@ -876,7 +879,7 @@ if __name__ == '__main__':
     my_maze.done()
 
 
-    #%% scratch pad
+    # scratch pad
     """
     # example window
     win = gx.GraphWin()
@@ -891,8 +894,8 @@ if __name__ == '__main__':
     win.getMouse()
     win.close()
     """
-""" with numpydoc standards, run examples with
-    >>>import doctest
-    >>>doctest.testmod(verbose=False)
+    """ with numpydoc standards, run examples with
+    >>> import doctest
+    >>> doctest.testmod(verbose=False)
     in __name__ == __main__ block
-"""
+    """
